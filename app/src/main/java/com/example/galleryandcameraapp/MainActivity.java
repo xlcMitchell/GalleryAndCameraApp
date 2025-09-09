@@ -2,13 +2,19 @@ package com.example.galleryandcameraapp;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -24,14 +30,40 @@ public class MainActivity extends AppCompatActivity {
     private final int PERMISSION_REQUEST_CODE = 200; //Identifies permission request made to system
     private RecyclerView imagesRV; //recycler view variable
     private RecyclerViewAdapter imageRVAdapter; //recyclerview adapter
-
+    private int image_number = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Button cameraButton = findViewById(R.id.cameraButton);
         imagePaths = new ArrayList<>();
         imagesRV = findViewById(R.id.galleryRecyclerView);
+
+        ActivityResultLauncher<Intent> takePhoto = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if(result.getResultCode() == RESULT_OK && result.getData() != null){
+                        Bundle bundle = result.getData().getExtras();
+                        Bitmap image = (Bitmap) bundle.get("data");
+                        Toast.makeText(getApplicationContext(), "Image recieved", Toast.LENGTH_SHORT).show();
+                        MediaStore.Images.Media.insertImage(getContentResolver(),image,
+                                "imag_" + image_number++,"image_captured");
+                        imagePaths.clear();
+                        getImagePath();
+                    }
+                }
+        );
+
+        cameraButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                takePhoto.launch(intent);
+            }
+        });
+
+
         prepareRecyclerView();
         requestPermissions();
 
@@ -42,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch(requestCode){
             case PERMISSION_REQUEST_CODE:
-                //checking if pmissions are accepted
+                //checking if permissions are accepted
                 if(grantResults.length > 0){
                     boolean storageAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
                     if(storageAccepted){

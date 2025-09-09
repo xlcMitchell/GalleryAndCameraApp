@@ -41,7 +41,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         File imgFile = new File(imagePathArrayList.get(position));
         if(imgFile.exists()){
             Log.d("IMAGEEXISTS","YESITDOES");
-            Picasso.get().load(imgFile).placeholder(R.drawable.ic_launcher_background).error(R.drawable.test_image).into(holder.imageIV,
+            Picasso.get().load(imgFile)
+                    .resize(200,200)
+                    .placeholder(R.drawable.ic_launcher_background)
+                    .error(R.drawable.test_image)
+                    .into(holder.imageIV,
                     new com.squareup.picasso.Callback() {
                         @Override
                         public void onSuccess() {
